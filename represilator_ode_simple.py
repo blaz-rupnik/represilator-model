@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+from scipy import signal
+import time
 
 # function that returns dZ/dt
 def model(Z,t,alpha, alpha0, beta, n):
@@ -89,37 +91,72 @@ alpha0 = 0.001 * alpha
 n = 2
 beta = 5
 
-params= (alpha, alpha0, beta, n)
+def osc_detect(a):
+    peaks = signal.find_peaks(a)
+    num_of_peaks = len(peaks[0])
 
-Z = odeint(model, Z0, t, args=params)
+    if num_of_peaks <= 1:
+        return 0
+    
+    peak_values = a[peaks[0]]
 
-params_1 = (alpha, alpha0, beta, n, 2, 2, 2, 100, 100, 100)
-Z_1 = odeint(extended_model_1, Z0, t, args=params_1)
+    if (abs(peak_values[0] - peak_values[-1])) <= 0.3:
+        return 1
 
-Z_2 = odeint(extended_model_2, Z0, t, args=params_1)
+    return 0
 
-A = Z[:,3]
-B = Z[:,4]
-C = Z[:,5]
+def simulate_extended_model_1():
+    with open('extended_model_1_v2.txt', 'w') as f:
+        result = []
+        for i in range (1,5):
+            new = []
+            for j in range(0,100001):
+                params = (alpha, alpha0, beta, n, i, i, i, j, j, j)
+                Z = odeint(extended_model_1, Z0, t, args=params)
+                A = Z[:,3]
+                new.append(osc_detect(A))
+            f.write("%s\n" % ','.join(str(x) for x in new))
+            result.append(new)
+            print("-- starting new row --")
+    f.close()
+    print("file was closed")
+    return result
 
-A1 = Z_1[:,3]
-B1 = Z_1[:,4]
-C1 = Z_1[:,5]
+#params= (alpha, alpha0, beta, n)
 
-A2 = Z_2[:,3]
-B2 = Z_2[:,4]
-C2 = Z_2[:,5]
+#Z = odeint(model, Z0, t, args=params)
+
+#params_1 = (alpha, alpha0, beta, n, 2, 2, 2, 100, 100, 100)
+#Z_1 = odeint(extended_model_1, Z0, t, args=params_1)
+
+#Z_2 = odeint(extended_model_2, Z0, t, args=params_1)
+
+#test = simulate_extended_model_1()
+#print(test)
+
+#A = Z[:,3]
+#B = Z[:,4]
+#C = Z[:,5]
+
+start = time.time()
+first_test = simulate_extended_model_1()
+end = time.time()
+print(end - start)
+#print(first_test)
 
 # plot results
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.plot(t,A2,'g:',label='A(t)')
-ax.plot(t,B2,'b-',label='B(t)')
-ax.plot(t,C2,'r--',label='C(t)')
-ax.set_ylabel('concentrations')
-ax.set_xlabel('time')
-ax.legend(loc='best')
-plt.show()
+#fig = plt.figure()
+
+#plotting results of first extended model
+#ax = fig.add_subplot(111)
+#ax.imshow(first_test, aspect='auto', interpolation='nearest', cmap=plt.cm.gray)
+#ax.plot(t,A,'g:',label='A(t)')
+#ax.plot(t,B,'b-',label='B(t)')
+#ax.plot(t,C,'r--',label='C(t)')
+#ax.set_ylabel('concentrations')
+#ax.set_xlabel('time')
+#ax.legend(loc='best')
+#plt.show()
 
 ##################
 ##################
