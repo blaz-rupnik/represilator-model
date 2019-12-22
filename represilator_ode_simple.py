@@ -122,6 +122,23 @@ def simulate_extended_model_1():
     print("file was closed")
     return result
 
+def simulate_extended_model_2():
+    with open('extended_model_2_v2.txt', 'w') as f:
+        result = []
+        for i in range (1,5):
+            new = []
+            for j in range(0,100001):
+                params = (alpha, alpha0, beta, n, i, i, i, j, j, j)
+                Z = odeint(extended_model_2, Z0, t, args=params)
+                A = Z[:,3]
+                new.append(osc_detect(A))
+            f.write("%s\n" % ','.join(str(x) for x in new))
+            result.append(new)
+            print("-- starting new row --")
+    f.close()
+    print("file was closed")
+    return result
+
 #params= (alpha, alpha0, beta, n)
 
 #Z = odeint(model, Z0, t, args=params)
@@ -139,7 +156,7 @@ def simulate_extended_model_1():
 #C = Z[:,5]
 
 start = time.time()
-first_test = simulate_extended_model_1()
+first_test = simulate_extended_model_2()
 end = time.time()
 print(end - start)
 #print(first_test)
