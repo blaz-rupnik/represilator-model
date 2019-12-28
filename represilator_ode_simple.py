@@ -79,7 +79,7 @@ def extended_model_2(Z,t,alpha, alpha0, beta, n, nA, nB, nC, kA, kB, kC):
 Z0 = [ 7.02028482, 1.57288111, 58.50876295, 8.69333201, 1.40155783, 53.49915358]
 
 # number of time points
-t_end = 25
+t_end = 100
 n = t_end * 10
 
 # time points
@@ -95,23 +95,25 @@ def osc_detect(a):
     peaks = signal.find_peaks(a)
     num_of_peaks = len(peaks[0])
 
-    if num_of_peaks <= 1:
+    if num_of_peaks <= 2:
         return 0
     
     peak_values = a[peaks[0]]
 
-    if (abs(peak_values[0] - peak_values[-1])) <= 0.3:
+    if (abs(peak_values[-3] - peak_values[-2])) <= 0.001:
         return 1
 
     return 0
 
 def simulate_extended_model_1():
-    with open('extended_model_1_v2.txt', 'w') as f:
+    with open('extended_model_1_v3.txt', 'w') as f:
         result = []
         for i in range (1,5):
             new = []
-            for j in range(0,100001):
-                params = (alpha, alpha0, beta, n, i, i, i, j, j, j)
+            logspace_vector = np.logspace(0,5,1000).astype(int)
+
+            for j in range(0,len(logspace_vector)):
+                params = (alpha, alpha0, beta, n, i, i, i, logspace_vector[j], logspace_vector[j], logspace_vector[j])
                 Z = odeint(extended_model_1, Z0, t, args=params)
                 A = Z[:,3]
                 new.append(osc_detect(A))
@@ -123,12 +125,14 @@ def simulate_extended_model_1():
     return result
 
 def simulate_extended_model_2():
-    with open('extended_model_2_v2.txt', 'w') as f:
+    with open('extended_model_2_v3.txt', 'w') as f:
         result = []
         for i in range (1,5):
             new = []
-            for j in range(0,100001):
-                params = (alpha, alpha0, beta, n, i, i, i, j, j, j)
+            logspace_vector = np.logspace(0,5,1000).astype(int)
+
+            for j in range(0,len(logspace_vector)):
+                params = (alpha, alpha0, beta, n, i, i, i, logspace_vector[j], logspace_vector[j], logspace_vector[j])
                 Z = odeint(extended_model_2, Z0, t, args=params)
                 A = Z[:,3]
                 new.append(osc_detect(A))
