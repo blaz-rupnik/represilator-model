@@ -91,33 +91,60 @@ alpha0 = 0.001 * alpha
 n = 2
 beta = 5
 
+
+def max_diff(a):
+    diff = 0
+    temp = a[:]
+    temp.sort()
+    diff = abs(temp[0] - temp[-1])
+    return diff
+
 def osc_detect(a):
     peaks = signal.find_peaks(a)
     num_of_peaks = len(peaks[0])
 
-    if num_of_peaks <= 2:
-        return 0
+    if num_of_peaks <= 3:
+        return 0, 0, 0
     
     peak_values = a[peaks[0]]
 
     if (abs(peak_values[-3] - peak_values[-2])) <= 0.001:
-        return 1
+        #If this signal is valid, we need to find the period of oscilation
+        peaks_i = peaks[0]
+        print("Peaks:", peaks_i)
+        f = [x - peaks_i[i - 1] for i, x in enumerate(peaks_i)][2:-1]
+        print("Diffs:", f)
+        print("Values:", peak_values)
+        diff = max_diff(f)
+        print("Max diff:", diff)
+        if diff > 10:
+            return 0, 0, 0
+        return 1, f[0], peak_values[-2]
 
-    return 0
+    return 0, 0, 0
 
 def simulate_extended_model_1():
-    with open('extended_model_1_v3.txt', 'w') as f:
+    with open('extended_model_1_v3.txt', 'w') as f, \
+            open('extended_model_1_amplitudes.txt', 'w') as fa, \
+            open('extended_model_1_periods.txt', 'w') as fp:
         result = []
-        for i in range (1,5):
+        for i in range(1, 5):
             new = []
+            new_amp = []
+            new_per = []
             logspace_vector = np.logspace(0,5,1000).astype(int)
 
-            for j in range(0,len(logspace_vector)):
+            for j in range(0, len(logspace_vector)):
                 params = (alpha, alpha0, beta, n, i, i, i, logspace_vector[j], logspace_vector[j], logspace_vector[j])
                 Z = odeint(extended_model_1, Z0, t, args=params)
-                A = Z[:,3]
-                new.append(osc_detect(A))
+                A = Z[:, 3]
+                is_osc, period, amplitude = osc_detect(A)
+                new.append(is_osc)
+                new_amp.append(amplitude)
+                new_per.append(period)
             f.write("%s\n" % ','.join(str(x) for x in new))
+            fa.write("%s\n" % ','.join(str(x) for x in new_amp))
+            fp.write("%s\n" % ','.join(str(x) for x in new_per))
             result.append(new)
             print("-- starting new row --")
     f.close()
@@ -125,18 +152,27 @@ def simulate_extended_model_1():
     return result
 
 def simulate_extended_model_2():
-    with open('extended_model_2_v3.txt', 'w') as f:
+    with open('extended_model_2_v3.txt', 'w') as f, \
+            open('extended_model_2_amplitudes.txt', 'w') as fa, \
+            open('extended_model_2_periods.txt', 'w') as fp:
         result = []
-        for i in range (1,5):
+        for i in range(1, 5):
             new = []
-            logspace_vector = np.logspace(0,5,1000).astype(int)
+            new_amp = []
+            new_per = []
+            logspace_vector = np.logspace(0, 5, 1000).astype(int)
 
-            for j in range(0,len(logspace_vector)):
+            for j in range(0, len(logspace_vector)):
                 params = (alpha, alpha0, beta, n, i, i, i, logspace_vector[j], logspace_vector[j], logspace_vector[j])
                 Z = odeint(extended_model_2, Z0, t, args=params)
-                A = Z[:,3]
-                new.append(osc_detect(A))
+                A = Z[:, 3]
+                is_osc, period, amplitude = osc_detect(A)
+                new.append(is_osc)
+                new_amp.append(amplitude)
+                new_per.append(period)
             f.write("%s\n" % ','.join(str(x) for x in new))
+            fa.write("%s\n" % ','.join(str(x) for x in new_amp))
+            fp.write("%s\n" % ','.join(str(x) for x in new_per))
             result.append(new)
             print("-- starting new row --")
     f.close()
@@ -160,7 +196,7 @@ def simulate_extended_model_2():
 #C = Z[:,5]
 
 start = time.time()
-first_test = simulate_extended_model_2()
+first_test = simulate_extended_model_1()
 end = time.time()
 print(end - start)
 #print(first_test)
@@ -183,6 +219,5 @@ print(end - start)
 ##################
 #################
 
-
-
+# Generate amplitude heatmaps
 
