@@ -52,9 +52,77 @@ beta = 5
 ############################################
 # Helper functions for genetic algorithm
 ############################################
-def calculate_pop_fitness():
-    #TODO
-    return 1
+def signal_oscilates(a):
+    peaks = signal.find_peaks(a)
+    num_of_peaks = len(peaks[0])
+
+    # Worst case scenario, model not even close to oscilating
+    if num_of_peaks <= 3:
+        return (False, 0, 0)
+
+    peak_values = a[peaks[0]]
+
+    peak_difference = abs(peak_values[-3] - peak_values[-2])
+
+    if (abs(peak_values[-3] - peak_values[-2])) <= 0.001:
+        peak_values = a[peaks[0]]
+        return (True, 1, peak_values[-2])
+    else:
+        return (False, 1 - peak_difference, 0)
+    
+
+def calculate_gene_fitness(input):
+    params = (alpha, alpha0, beta, n, input[0], input[1], input[2], input[3], input[4], input[5])
+    result = odeint(extended_model_1, Z0, t, args=params)
+
+    A = result[:,3]
+
+    return signal_oscilates(result[:,3])
+
+def select_best_parents(population, fitness, num_parents_mating, generation):
+    indices = (-fitness).argsort()[:num_parents_mating]
+    print("Best for generation: " + str(generation) + ", Fitness: " + str(fitness[indices[0]]))
+    print(population[indices[0],:])
+    return population[indices,:]
+
+def perform_crossover(parents, offspring_size,num_parents):
+    offspring = np.empty(offspring_size, dtype=int)
+    for k in range(offspring_size[0]):
+        parent_1 = parents[k % num_parents,:]
+        parent_2 = parents[(k+1) % num_parents,:]
+        offspring[k,:] = generate_from_parents(parent_1,parent_2)     
+    return offspring
+    
+
+def generate_from_parents(parent_1,parent_2):
+    result = np.empty(6,dtype=int)
+    for i in range(6):
+        parent_to_choose = np.random.randint(0,2)
+        if parent_to_choose == 0:
+            result[i] = parent_1[i]
+        else:
+            result[i] = parent_2[i]
+    return result
+
+def apply_mutation(offspring,num_of_offspring):
+    #we change single weight randomly for each element in offspring
+    for i in range(num_of_offspring):
+        position_to_change = np.random.randint(0,6)
+        if position_to_change < 3:
+            offspring[i,position_to_change] = np.random.randint(1,5)
+        else:
+            offspring[i,position_to_change] = np.random.randint(0,100000)
+    return offspring
+
+def append_random(offspring,num_of_random):
+    size_to_add = (num_of_random,3)
+
+    paramN = np.random.randint(1,5,size=size_to_add)
+    paramK = np.random.randint(1,100000,size=size_to_add)
+
+    randomParam = np.concatenate((paramN,paramK), axis=1)
+    return np.concatenate((offspring,randomParam), axis=0)
+
 
 #Number of weight we are looking to optimize
 num_weights = 6
@@ -81,9 +149,31 @@ initial_population = np.concatenate((inital_1,inital_2), axis=1)
 # Generation and parents mating
 ###############################
 
+# Parameters
 num_generations = 5
 num_parents_mating = 4
+perform_mutation = True
 
-for generation in range(num_generations)
-    #Measuring the fitness of each chromosome in the population
+for generation in range(num_generations):
+    new_fitness = []
+    for i in range(solutions_per_population):
+        (oscilates, fitness_to_add, amplitude) = calculate_gene_fitness(initial_population[i,:])
+        if oscilates:
+            print("Found oscilating solution for parameters: " + str(initial_population[i,:]))
+            print("Generation number: " + str(generation) + " Amplitude: " + str(amplitude))
+        new_fitness.append(fitness_to_add)
+
+    #select best parents based on fitness
+    parents = select_best_parents(initial_population, np.array(new_fitness), num_parents_mating, generation)
+
+    #perform crossover
+    offspring = perform_crossover(parents,(num_parents_mating,6),num_parents_mating)
+
+    #perform mutation
+    if perform_mutation:
+        offspring = apply_mutation(offspring,num_parents_mating)
+    
+    #append random genes 
+    initial_population = append_random(offspring,num_parents_mating)
+
 
