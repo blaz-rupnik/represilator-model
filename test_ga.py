@@ -123,12 +123,31 @@ def append_random(offspring,num_of_random):
     randomParam = np.concatenate((paramN,paramK), axis=1)
     return np.concatenate((offspring,randomParam), axis=0)
 
+def show_solution(nA,nB,nC,kA,kB,kC):
+    #testing outcome
+    params = (alpha, alpha0, beta, n, nA, nB, nC, kA, kB, kC)
+    result = odeint(extended_model_1, Z0, t, args=params)
+
+    A = result[:,3]
+    B = result[:,4]
+    C = result[:,5]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(t,A,'g:',label='A(t)')
+    ax.plot(t,B,'b-',label='B(t)')
+    ax.plot(t,C,'r--',label='C(t)')
+    ax.set_ylabel('concentrations')
+    ax.set_xlabel('time')
+    ax.legend(loc='best')
+    plt.show()
+
 
 #Number of weight we are looking to optimize
 num_weights = 6
 
 #How many solution will one population have
-solutions_per_population = 8
+solutions_per_population = 16
 
 pop_size = (solutions_per_population,3)
 
@@ -150,30 +169,34 @@ initial_population = np.concatenate((inital_1,inital_2), axis=1)
 ###############################
 
 # Parameters
-num_generations = 5
-num_parents_mating = 4
-perform_mutation = True
+num_generations = 200
+num_parents_mating = 8
+perform_mutation = False
+perform_genetic = False
 
-for generation in range(num_generations):
-    new_fitness = []
-    for i in range(solutions_per_population):
-        (oscilates, fitness_to_add, amplitude) = calculate_gene_fitness(initial_population[i,:])
-        if oscilates:
-            print("Found oscilating solution for parameters: " + str(initial_population[i,:]))
-            print("Generation number: " + str(generation) + " Amplitude: " + str(amplitude))
-        new_fitness.append(fitness_to_add)
+if perform_genetic:
+    for generation in range(num_generations):
+        new_fitness = []
+        for i in range(solutions_per_population):
+            (oscilates, fitness_to_add, amplitude) = calculate_gene_fitness(initial_population[i,:])
+            if oscilates:
+                print("Found oscilating solution for parameters: " + str(initial_population[i,:]))
+                print("Generation number: " + str(generation) + " Amplitude: " + str(amplitude))
+            new_fitness.append(fitness_to_add)
 
-    #select best parents based on fitness
-    parents = select_best_parents(initial_population, np.array(new_fitness), num_parents_mating, generation)
+        #select best parents based on fitness
+        parents = select_best_parents(initial_population, np.array(new_fitness), num_parents_mating, generation)
 
-    #perform crossover
-    offspring = perform_crossover(parents,(num_parents_mating,6),num_parents_mating)
+        #perform crossover
+        offspring = perform_crossover(parents,(num_parents_mating,6),num_parents_mating)
 
-    #perform mutation
-    if perform_mutation:
-        offspring = apply_mutation(offspring,num_parents_mating)
-    
-    #append random genes 
-    initial_population = append_random(offspring,num_parents_mating)
+        #perform mutation
+        if perform_mutation:
+            offspring = apply_mutation(offspring,num_parents_mating)
+        
+        #append random genes 
+        initial_population = append_random(offspring,solutions_per_population - num_parents_mating)
 
 
+#show_solution(2, 1, 3, 33852, 548, 77207)
+#solution that was found shown graphical
